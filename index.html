@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<style>
+
+
+
+.vcells{
+  fill: none;
+  stroke: black;
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/queue.v1.min.js"></script>
+<script src="http://d3js.org/topojson.v1.min.js"></script>
+
+<script>
+
+
+
+////////////////////////map//////////////////////////
+
+var width = 900;
+var height =  900;
+
+var projection = d3.geo.azimuthalEqualArea()
+                        .rotate([100, -45])
+                        .center([23, 6])
+                        .scale(8000)
+                        .translate([width/2, height/2]);
+
+
+var path = d3.geo.path().projection(projection);
+
+var voronoi = d3.geom.voronoi()
+    .x(function(d) { return d.x; })
+    .y(function(d) { return d.y; });
+    // .clipExtent([[0, 0], [width, height]]);
+
+var map = d3.select("body")
+            .append("svg")
+            .attr({
+              width: width,
+              height: height,
+              overflow: "hidden"
+            });
+
+var colour = d3.scale.category20c();
+
+queue()
+      .defer(d3.json,"nb.geojson")
+      .defer(d3.csv, "weather.csv")
+      .await(ready);
+
+
+function ready(error,nb,stations){
+
+    stations = stations.filter(function(d){
+      d[1] = d.longitude;
+      d[0] = d.latitude;
+      var position = projection(d);
+      d.x = position[0];
+      d.y = position[1];
+      return true;
+    });
+
+    voronoi(stations).forEach(function(d) { d.point.cell = d; });                                               
+    var group = map.selectAll("svg")
+                        .data(nb.features)
+                        .enter(); 
+
+                  group.append("path")
+                        .attr("d", path)
+                        .attr("class", "area")
+                        .attr("id",function(d){ return d.properties.NAME;})
+                        .attr("fill", function(d, i) { 
+                                  return colour(i); });
+
+    var buildPathFromPoint = function(point) {
+      return "M" + point.cell.join("L") + "Z"; };
+    
+
+    var points = group.append("g")
+                      .attr("class","stations")
+                      .selectAll("g")
+                      .data(stations)
+                      .enter()
+                      .append("g")
+                      .attr("class","station");
+
+                points.append("circle")
+                      .attr("cx",function(d){
+                        return projection([d.latitude,d.longitude])[0];
+                      })
+                      .attr("cy",function(d){
+                        return projection([d.latitude,d.longitude])[1];  
+                      })
+                      .attr("r",5)
+                      .attr("stroke","black")
+                      .style("fill", "yellow")
+                      .style("opacity", 1);
+
+                points.append("path")
+                      .attr("class","vcells")
+                      .attr("d",buildPathFromPoint); 
+
+
+}
+
+
+
+
+</script>
+
+</body>
+
+</html>
+
+
