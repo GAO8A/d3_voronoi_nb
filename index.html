@@ -3,7 +3,9 @@
 <meta charset="utf-8">
 <style>
 
-
+body {
+  background-color: #92B4CA;
+}
 
 .vcells{
   fill: none;
@@ -21,7 +23,7 @@
 }
 
 line {
-  stroke: #555;
+  stroke: #3558B8;
   stroke-width: 2px;
 }
 
@@ -34,14 +36,14 @@ line {
 <script src="http://d3js.org/d3.v3.min.js"></script>
 <script src="http://d3js.org/queue.v1.min.js"></script>
 <script src="http://d3js.org/topojson.v1.min.js"></script>
-
+<div></div>
 <script>
 
 
 
 ////////////////////////map//////////////////////////
 
-var width = 500;
+var width = 700;
 var height =  500;
 
 var projection = d3.geo.azimuthalEqualArea()
@@ -68,9 +70,15 @@ var map = d3.select("body")
 
 var colour = d3.scale.category20c();
 
-// var colourScale = d3.scale.linear()
-//   .domain([-30, -20, -16, -10, 0, 10, 12, 16, 18, 22, 28, 36])
-//   .range(['#FFFFFF', '#828282', '#5D1879', '#00197C', '#00FFFF', '#00C44E', '#00FA57', '#FFFA56', '#F1E98D', '#E5AB58', '#FF0000', '#810000']);
+var tooltip = d3.select('div')
+        .append('span')
+        .style({
+          postion: 'absolute',
+          padding: '0 10px',
+          opacity: 0,
+          font: '15px arial, sans-serif'
+
+        });
 
 ////////// windmap stuff/////////////////////
 
@@ -184,8 +192,7 @@ function ready(error,nb,stations){
                         .attr("d", path)
                         .attr("class", "area")
                         .attr("id",function(d){ return d.properties.NAME;})
-                        .attr("fill", function(d, i) { 
-                                  return colour(i); });
+                        .attr("fill", "#CED8B6");
 
     var buildPathFromPoint = function(point) {
       return "M" + point.cell.join("L") + "Z"; };
@@ -214,7 +221,24 @@ function ready(error,nb,stations){
 
                 points.append("path")
                       .attr("class","vcells")
-                      .attr("d",buildPathFromPoint); 
+                      .attr("d",buildPathFromPoint)
+                      .on('mouseover', function(d){
+    
+                        tooltip.transition()
+                            .style('opacity',0.9)
+
+                        tooltip.html('<strong>Station: </strong>' + d['name'] +'<strong>  Wind Speed: </strong>' + d['direction'] + ' ' + d['speed'] + ' ' + 'km/h')
+                          .style('left', (d3.event.pageX) + 'px') // x position in relationship to the page
+                          .style('top', (d3.event.pageY)+ 'px')
+
+
+                        })
+                      .on('mouseout', function(d){
+                          d3.select(this) //'this keyword selects current selection'
+                            .style('opacity',1)
+
+                        });
+
 
                 // console.log(stations.length);
                 // console.log(stations[1].direction);
@@ -238,6 +262,7 @@ function ready(error,nb,stations){
 
 
 </script>
+
 
 </body>
 
